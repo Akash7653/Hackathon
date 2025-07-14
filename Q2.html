@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Typing Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #1a1a1a;
+            color: #00ff00;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+            background-color: #0d0d0d;
+        }
+
+        h1 {
+            text-align: center;
+            margin-top: 0;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        .prompt {
+            margin: 20px 0;
+            font-size: 1.2rem;
+            line-height: 1.5;
+            min-height: 100px;
+            position: relative;
+        }
+
+        .cursor {
+            position: relative;
+            display: inline-block;
+        }
+
+        .cursor::after {
+            content: '';
+            position: absolute;
+            right: -5px;
+            top: 0;
+            height: 1.2em;
+            width: 2px;
+            background-color: #00ff00;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .typed-correct {
+            color: #00ff00;
+        }
+
+        .typed-incorrect {
+            color: #ff0000;
+            text-decoration: underline;
+        }
+
+        .remaining {
+            opacity: 0.7;
+        }
+
+        .input-area {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        #user-input {
+            width: 100%;
+            padding: 10px;
+            background-color: #1a1a1a;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 10px;
+            background-color: #1a1a1a;
+            border: 1px solid #00ff00;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: #00ff00;
+            transition: width 0.3s;
+        }
+
+        .results {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #00ff00;
+        }
+
+        .stat {
+            margin: 10px 0;
+            font-size: 1.2rem;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        button {
+            background-color: #1a1a1a;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background-color: #00ff00;
+            color: #1a1a1a;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .prompt {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TERMINAL TYPING TEST</h1>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        
+        <div class="prompt" id="prompt"></div>
+        
+        <div class="input-area">
+            <input type="text" id="user-input" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="Start typing here..." title="Typing test input">
+        </div>
+        
+        <div class="results" id="results">
+            <h2>TEST RESULTS</h2>
+            <div class="stat">Speed: <span class="stat-value" id="speed">0</span> WPM</div>
+            <div class="stat">Accuracy: <span class="stat-value" id="accuracy">0</span>%</div>
+            <div class="stat">Errors: <span class="stat-value" id="errors">0</span></div>
+            <div class="stat">Time: <span class="stat-value" id="time">0</span> seconds</div>
+            <button id="restart-btn">RESTART TEST</button>
+        </div>
+    </div>
+
+    <script>
+        // Sample sentences
+        const sentences = [
+            "The quick brown fox jumps over the lazy dog.",
+            "Programming is the art of telling another human what one wants the computer to do.",
+            "The five boxing wizards jump quickly.",
+            "Pack my box with five dozen liquor jugs.",
+            "How vexingly quick daft zebras jump!",
+            "Bright vixens jump; dozy fowl quack.",
+            "Sphinx of black quartz, judge my vow.",
+            "Crazy Fredrick bought many very exquisite opal jewels.",
+            "We promptly judged antique ivory buckles for the next prize.",
+            "A wizard's job is to vex chumps quickly in fog."
+        ];
+
+        // DOM elements
+        const promptElement = document.getElementById('prompt');
+        const userInput = document.getElementById('user-input');
+        const progressBar = document.getElementById('progress-bar');
+        const resultsElement = document.getElementById('results');
+        const speedElement = document.getElementById('speed');
+        const accuracyElement = document.getElementById('accuracy');
+        const errorsElement = document.getElementById('errors');
+        const timeElement = document.getElementById('time');
+        const restartBtn = document.getElementById('restart-btn');
+
+        // Test variables
+        let currentSentence = '';
+        let startTime = 0;
+        let endTime = 0;
+        let errorCount = 0;
+        let totalTyped = 0;
+        let isTestRunning = false;
+
+        // Initialize the test
+        function initTest() {
+            // Select a random sentence
+            currentSentence = sentences[Math.floor(Math.random() * sentences.length)];
+            
+            // Display the sentence with typewriter effect
+            promptElement.innerHTML = '';
+            typewriterEffect(currentSentence);
+            
+            // Reset variables
+            errorCount = 0;
+            totalTyped = 0;
+            isTestRunning = false;
+            
+            // Reset UI
+            userInput.value = '';
+            userInput.disabled = false;
+            resultsElement.style.display = 'none';
+            progressBar.style.width = '0%';
+            
+            // Focus the input field
+            userInput.focus();
+        }
+
+        // Typewriter effect for displaying the prompt
+        function typewriterEffect(text) {
+            let i = 0;
+            const speed = 20; // milliseconds per character
+            
+            function type() {
+                if (i < text.length) {
+                    promptElement.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            
+            type();
+        }
+
+        // Start the test when user begins typing
+        userInput.addEventListener('input', (e) => {
+            if (!isTestRunning) {
+                startTime = new Date().getTime();
+                isTestRunning = true;
+            }
+            
+            const inputText = e.target.value;
+            totalTyped = inputText.length;
+            
+            // Update the prompt display with color coding
+            updatePromptDisplay(inputText);
+            
+            // Update progress bar
+            const progress = (inputText.length / currentSentence.length) * 100;
+            progressBar.style.width = `${Math.min(progress, 100)}%`;
+            
+            // Check if test is complete
+            if (inputText.length === currentSentence.length) {
+                endTest();
+            }
+        });
+
+        // Update the prompt display with correct/incorrect highlighting
+        function updatePromptDisplay(inputText) {
+            let displayHTML = '';
+            errorCount = 0;
+            
+            for (let i = 0; i < currentSentence.length; i++) {
+                if (i < inputText.length) {
+                    if (inputText[i] === currentSentence[i]) {
+                        displayHTML += `<span class="typed-correct">${currentSentence[i]}</span>`;
+                    } else {
+                        displayHTML += `<span class="typed-incorrect">${currentSentence[i]}</span>`;
+                        errorCount++;
+                    }
+                } else {
+                    displayHTML += `<span class="remaining">${currentSentence[i]}</span>`;
+                }
+            }
+            
+            // Add cursor
+            if (inputText.length < currentSentence.length) {
+                displayHTML += `<span class="cursor"></span>`;
+            }
+            
+            promptElement.innerHTML = displayHTML;
+        }
+
+        // End the test and show results
+        function endTest() {
+            endTime = new Date().getTime();
+            userInput.disabled = true;
+            
+            // Calculate stats
+            const timeInSeconds = (endTime - startTime) / 1000;
+            const words = currentSentence.split(' ').length;
+            const wpm = Math.round((words / timeInSeconds) * 60);
+            const accuracy = Math.round(((currentSentence.length - errorCount) / currentSentence.length) * 100);
+            
+            // Display results
+            speedElement.textContent = wpm;
+            accuracyElement.textContent = accuracy;
+            errorsElement.textContent = errorCount;
+            timeElement.textContent = timeInSeconds.toFixed(2);
+            
+            resultsElement.style.display = 'block';
+        }
+
+        // Restart the test
+        restartBtn.addEventListener('click', initTest);
+
+        // Initialize on page load
+        window.addEventListener('load', initTest);
+    </script>
+</body>
+</html>
