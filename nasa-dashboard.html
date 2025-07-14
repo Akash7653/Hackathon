@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NASA APOD Smart Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #0b3d91;
+            --secondary: #fc3d21;
+            --dark: #1a1a2e;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --transition: all 0.3s ease;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark);
+            color: var(--light);
+            line-height: 1.6;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(11, 61, 145, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(252, 61, 33, 0.1) 0%, transparent 20%);
+        }
+
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            grid-template-areas: 
+                "header header"
+                "main sidebar";
+            min-height: 100vh;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Header Styles */
+        .dashboard-header {
+            grid-area: header;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background-color: rgba(11, 61, 145, 0.9);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            animation: fadeIn 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+            -webkit-backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dashboard-header h1 {
+            font-size: 1.8rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .dashboard-header h1 i {
+            color: var(--warning);
+            animation: pulse 2s infinite;
+        }
+
+        .controls-container {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .date-picker {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .date-picker label {
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .date-picker input {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--gray);
+            background-color: rgba(255, 255, 255, 0.9);
+            font-family: inherit;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+        }
+
+        .date-picker input:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(252, 61, 33, 0.3);
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            box-shadow: var(--shadow);
+        }
+
+        .btn-primary {
+            background-color: var(--secondary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #e0351a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(252, 61, 33, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        /* Main Content Styles */
+        .dashboard-content {
+            grid-area: main;
+            background-color: rgba(26, 26, 46, 0.8);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 70vh;
+            
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Loader Styles */
+        .loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+            text-align: center;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--secondary);
+            animation: spin 1.2s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
+            position: relative;
+        }
+
+        .spinner::after {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            right: -6px;
+            bottom: -6px;
+            border: 6px solid transparent;
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1.5s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
+            opacity: 0.7;
+        }
+
+        .loader p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+            max-width: 300px;
+            line-height: 1.6;
+        }
+
+        /* APOD Card Styles */
+        .apod-card {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            width: 100%;
+            animation: slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .media-container {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+            transition: var(--transition);
+            aspect-ratio: 16/9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, rgba(11, 61, 145, 0.3), rgba(26, 26, 46, 0.7));
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .media-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        #apod-image, #apod-video {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .apod-details {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .apod-details h2 {
+            font-size: 1.8rem;
+            color: var(--warning);
+            margin-bottom: 5px;
+            line-height: 1.3;
+            background: linear-gradient(to right, var(--warning), #ff8c00);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .apod-meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--gray);
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .apod-explanation {
+            line-height: 1.7;
+            text-align: justify;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: auto;
+            flex-wrap: wrap;
+        }
+
+        .btn-secondary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #0a2e7a;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary.saved {
+            background-color: var(--success);
+        }
+
+        .btn-tertiary {
+            background-color: var(--gray);
+            color: white;
+        }
+
+        .btn-tertiary:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--light);
+            border: 2px solid var(--gray);
+        }
+
+        .btn-outline:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Error Message Styles */
+        .error-message {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            color: var(--danger);
+            text-align: center;
+            padding: 30px;
+            background-color: rgba(220, 53, 69, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            max-width: 500px;
+            animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+        }
+
+        .error-message i {
+            font-size: 3rem;
+            color: var(--danger);
+        }
+
+        .error-message p {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Favorites Panel Styles */
+        .favorites-panel {
+            grid-area: sidebar;
+            background-color: rgba(26, 26, 46, 0.8);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: var(--shadow);
+            overflow-y: auto;
+            max-height: 80vh;
+            
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .favorites-panel h3 {
+            margin-bottom: 20px;
+            color: var(--warning);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+            position: sticky;
+            top: 0;
+            background-color: rgba(26, 26, 46, 0.9);
+            padding: 10px 0;
+            z-index: 1;
+        }
+
+        .favorites-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .favorite-item {
+            background-color: rgba(11, 61, 145, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: var(--transition);
+            border-left: 4px solid var(--secondary);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .favorite-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(252, 61, 33, 0.1), transparent);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .favorite-item:hover {
+            background-color: rgba(11, 61, 145, 0.5);
+            transform: translateX(5px);
+        }
+
+        .favorite-item:hover::before {
+            opacity: 1;
+        }
+
+        .favorite-item h4 {
+            font-size: 1.05rem;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .favorite-item p {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .empty-favorites {
+            text-align: center;
+            padding: 20px;
+            color: var(--gray);
+            font-style: italic;
+        }
+
+        /* Fullscreen Styles */
+        .fullscreen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .fullscreen-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .fullscreen-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+            animation: zoomIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .fullscreen-content img, .fullscreen-content iframe {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .close-fullscreen {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background-color: transparent;
+            color: white;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .close-fullscreen:hover {
+            color: var(--secondary);
+            transform: rotate(90deg) scale(1.1);
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        /* Utility Classes */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        @keyframes zoomIn {
+            from { 
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to { 
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+                grid-template-areas: 
+                    "header"
+                    "main"
+                    "sidebar";
+            }
+            
+            .dashboard-header {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+            
+            .controls-container {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .apod-card {
+                grid-template-columns: 1fr;
+            }
+            
+            .favorites-panel {
+                max-height: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 15px;
+                gap: 15px;
+            }
+            
+            .dashboard-header {
+                padding: 15px;
+            }
+            
+            .dashboard-header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .date-picker {
+                flex-direction: column;
+                align-items: stretch;
+                width: 100%;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .dashboard-content, .favorites-panel {
+                padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .apod-details h2 {
+                font-size: 1.5rem;
+            }
+            
+            .apod-explanation {
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1><i class="fas fa-rocket"></i> NASA Astronomy Dashboard</h1>
+            <div class="controls-container">
+                <div class="date-picker">
+                    <label for="apod-date">Select Date:</label>
+                    <input type="date" id="apod-date" max="">
+                </div>
+                <button id="fetch-btn" class="btn btn-primary">
+                    <i class="fas fa-sync-alt"></i> Fetch APOD
+                </button>
+            </div>
+        </header>
+        
+        <main class="dashboard-content">
+            <div class="loader hidden">
+                <div class="spinner"></div>
+                <p>Exploring the cosmos... Fetching today's astronomical wonder</p>
+            </div>
+            
+            <div class="apod-card hidden">
+                <div class="media-container">
+                    <img id="apod-image" class="hidden" alt="Astronomy Picture of the Day">
+                    <iframe id="apod-video" class="hidden" frameborder="0" allowfullscreen></iframe>
+                </div>
+                
+                <div class="apod-details">
+                    <h2 id="apod-title"></h2>
+                    <div class="apod-meta">
+                        <span id="apod-date-display"></span>
+                        <span id="apod-copyright"></span>
+                    </div>
+                    <p id="apod-explanation"></p>
+                    <div class="action-buttons">
+                        <button id="save-fav" class="btn btn-secondary">
+                            <i class="far fa-heart"></i> Save to Favorites
+                        </button>
+                        <button id="share-btn" class="btn btn-tertiary">
+                            <i class="fas fa-share-alt"></i> Share
+                        </button>
+                        <button id="fullscreen-btn" class="btn btn-outline">
+                            <i class="fas fa-expand"></i> Fullscreen
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="error-message hidden">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>We couldn't connect to NASA's servers. The cosmos seems unreachable at the moment.</p>
+                <button id="retry-btn" class="btn btn-primary">
+                    <i class="fas fa-redo"></i> Try Again
+                </button>
+            </div>
+        </main>
+        
+        <aside class="favorites-panel">
+            <h3><i class="fas fa-bookmark"></i> Saved Favorites</h3>
+            <div class="favorites-list">
+                <div class="empty-favorites">No favorites saved yet</div>
+            </div>
+        </aside>
+    </div>
+    
+    <div class="fullscreen-overlay hidden">
+        <button class="close-fullscreen" title="Close (Esc)">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="fullscreen-content"></div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const fetchBtn = document.getElementById('fetch-btn');
+            const retryBtn = document.getElementById('retry-btn');
+            const dateInput = document.getElementById('apod-date');
+            const loader = document.querySelector('.loader');
+            const apodCard = document.querySelector('.apod-card');
+            const errorMessage = document.querySelector('.error-message');
+            const apodImage = document.getElementById('apod-image');
+            const apodVideo = document.getElementById('apod-video');
+            const apodTitle = document.getElementById('apod-title');
+            const apodDateDisplay = document.getElementById('apod-date-display');
+            const apodCopyright = document.getElementById('apod-copyright');
+            const apodExplanation = document.getElementById('apod-explanation');
+            const saveFavBtn = document.getElementById('save-fav');
+            const shareBtn = document.getElementById('share-btn');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            const favoritesList = document.querySelector('.favorites-list');
+            const fullscreenOverlay = document.querySelector('.fullscreen-overlay');
+            const closeFullscreen = document.querySelector('.close-fullscreen');
+            const fullscreenContent = document.querySelector('.fullscreen-content');
+            const emptyFavorites = document.querySelector('.empty-favorites');
+            
+            // API Configuration
+            const API_KEY = 'hsC7SMJiIguU9gdoQ2x6O6AqVolYuVyzzZQDAnW1';
+            const API_URL = 'https://api.nasa.gov/planetary/apod';
+            let currentAPODData = null;
+            
+            // Initialize the dashboard
+            initDashboard();
+            
+            function initDashboard() {
+                // Set max date to today
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.max = today;
+                dateInput.value = today;
+                
+                // Load favorites from localStorage
+                loadFavorites();
+                
+                // Fetch today's APOD by default
+                fetchAPOD(today);
+                
+                // Event listeners
+                fetchBtn.addEventListener('click', handleFetch);
+                retryBtn.addEventListener('click', handleFetch);
+                saveFavBtn.addEventListener('click', saveFavorite);
+                shareBtn.addEventListener('click', shareAPOD);
+                fullscreenBtn.addEventListener('click', openFullscreen);
+                closeFullscreen.addEventListener('click', closeFullscreenHandler);
+                
+                // Keyboard shortcuts
+                document.addEventListener('keydown', function(e) {
+                    // Fetch on Enter key
+                    if (e.key === 'Enter' && document.activeElement === dateInput) {
+                        handleFetch();
+                    }
+                    
+                    // Close fullscreen on Escape key
+                    if (e.key === 'Escape' && fullscreenOverlay.classList.contains('active')) {
+                        closeFullscreenHandler();
+                    }
+                });
+            }
+            
+            function handleFetch() {
+                const selectedDate = dateInput.value;
+                fetchAPOD(selectedDate);
+            }
+            
+            async function fetchAPOD(date) {
+                try {
+                    // Show loader and hide other elements
+                    showLoadingState();
+                    
+                    // Construct API URL
+                    const url = `${API_URL}?api_key=${API_KEY}&date=${date}&thumbs=true`;
+                    
+                    // Fetch data with timeout
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000);
+                    
+                    const response = await fetch(url, { signal: controller.signal });
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        throw new Error(`API request failed with status ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    currentAPODData = data;
+                    
+                    // Display the data
+                    displayAPOD(data);
+                    
+                    // Check if this APOD is already in favorites
+                    checkIfFavorite(data.date);
+                    
+                } catch (error) {
+                    console.error('Error fetching APOD:', error);
+                    showErrorState(error);
+                }
+            }
+            
+            function showLoadingState() {
+                loader.classList.remove('hidden');
+                apodCard.classList.add('hidden');
+                errorMessage.classList.add('hidden');
+            }
+            
+            function displayAPOD(data) {
+                // Hide loader and show APOD card
+                loader.classList.add('hidden');
+                apodCard.classList.remove('hidden');
+                
+                // Set the title and explanation
+                apodTitle.textContent = data.title;
+                apodExplanation.textContent = data.explanation;
+                
+                // Format and display the date
+                const displayDate = new Date(data.date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    weekday: 'long'
+                });
+                apodDateDisplay.textContent = displayDate;
+                
+                // Display copyright if available
+                apodCopyright.textContent = data.copyright ? `© ${data.copyright}` : 'Public Domain';
+                
+                // Handle media (image or video)
+                apodImage.classList.add('hidden');
+                apodVideo.classList.add('hidden');
+                
+                // Special case for video thumbnails
+                const mediaUrl = data.media_type === 'video' && data.thumbnail_url ? 
+                    data.thumbnail_url : data.url;
+                
+                if (data.media_type === 'image') {
+                    apodImage.src = mediaUrl;
+                    apodImage.alt = data.title;
+                    apodImage.classList.remove('hidden');
+                    
+                    // Set fullscreen content to image
+                    fullscreenContent.innerHTML = `<img src="${mediaUrl}" alt="${data.title}">`;
+                } else if (data.media_type === 'video') {
+                    if (data.thumbnail_url) {
+                        // Show thumbnail with play button overlay
+                        apodImage.src = data.thumbnail_url;
+                        apodImage.alt = `Thumbnail for ${data.title}`;
+                        apodImage.classList.remove('hidden');
+                        
+                        // Add play button overlay
+                        const playButton = document.createElement('div');
+                        playButton.className = 'video-play-button';
+                        playButton.innerHTML = '<i class="fas fa-play"></i>';
+                        apodImage.parentElement.appendChild(playButton);
+                        
+                        // Set fullscreen content to video
+                        fullscreenContent.innerHTML = `<iframe src="${data.url}" frameborder="0" allowfullscreen></iframe>`;
+                    } else {
+                        // Fallback to direct video embed
+                        apodVideo.src = data.url;
+                        apodVideo.classList.remove('hidden');
+                        
+                        // Set fullscreen content to video
+                        fullscreenContent.innerHTML = `<iframe src="${data.url}" frameborder="0" allowfullscreen></iframe>`;
+                    }
+                }
+                
+                // Add animation
+                apodCard.style.animation = 'none';
+                void apodCard.offsetWidth; // Trigger reflow
+                apodCard.style.animation = 'slideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
+            }
+            
+            function showErrorState(error) {
+                loader.classList.add('hidden');
+                apodCard.classList.add('hidden');
+                
+                // Customize error message based on error type
+                const errorMsg = document.querySelector('.error-message p');
+                if (error.name === 'AbortError') {
+                    errorMsg.textContent = 'Request timed out. The server is taking too long to respond.';
+                } else if (error.message.includes('Failed to fetch')) {
+                    errorMsg.textContent = 'Network error. Please check your internet connection.';
+                } else {
+                    errorMsg.textContent = 'Failed to fetch data from NASA. Please try again later.';
+                }
+                
+                errorMessage.classList.remove('hidden');
+            }
+            
+            function saveFavorite() {
+                if (!currentAPODData) return;
+                
+                const currentDate = currentAPODData.date;
+                const title = currentAPODData.title;
+                const mediaType = currentAPODData.media_type;
+                const thumbnail = mediaType === 'video' ? 
+                    (currentAPODData.thumbnail_url || currentAPODData.url) : 
+                    currentAPODData.url;
+                
+                // Get existing favorites
+                let favorites = JSON.parse(localStorage.getItem('nasaFavorites')) || [];
+                
+                // Check if already saved
+                const existingIndex = favorites.findIndex(fav => fav.date === currentDate);
+                
+                if (existingIndex >= 0) {
+                    // Remove from favorites
+                    favorites.splice(existingIndex, 1);
+                    saveFavBtn.innerHTML = '<i class="far fa-heart"></i> Save to Favorites';
+                    saveFavBtn.classList.remove('saved');
+                    
+                    // Show toast notification
+                    showToast('Removed from favorites', 'warning');
+                } else {
+                    // Add to favorites
+                    favorites.push({
+                        date: currentDate,
+                        title: title,
+                        mediaType: mediaType,
+                        thumbnail: thumbnail
+                    });
+                    saveFavBtn.innerHTML = '<i class="fas fa-heart"></i> Saved';
+                    saveFavBtn.classList.add('saved');
+                    
+                    // Show toast notification
+                    showToast('Added to favorites', 'success');
+                }
+                
+                // Save to localStorage
+                localStorage.setItem('nasaFavorites', JSON.stringify(favorites));
+                
+                // Update favorites list
+                loadFavorites();
+            }
+            
+            function checkIfFavorite(date) {
+                const favorites = JSON.parse(localStorage.getItem('nasaFavorites')) || [];
+                const isFavorite = favorites.some(fav => fav.date === date);
+                
+                if (isFavorite) {
+                    saveFavBtn.innerHTML = '<i class="fas fa-heart"></i> Saved';
+                    saveFavBtn.classList.add('saved');
+                } else {
+                    saveFavBtn.innerHTML = '<i class="far fa-heart"></i> Save to Favorites';
+                    saveFavBtn.classList.remove('saved');
+                }
+            }
+            
+            function loadFavorites() {
+                const favorites = JSON.parse(localStorage.getItem('nasaFavorites')) || [];
+                favoritesList.innerHTML = '';
+                
+                if (favorites.length === 0) {
+                    favoritesList.appendChild(emptyFavorites);
+                    return;
+                }
+                
+                // Remove empty message if it exists
+                if (favoritesList.contains(emptyFavorites)) {
+                    favoritesList.removeChild(emptyFavorites);
+                }
+                
+                // Sort by date (newest first)
+                favorites.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                favorites.forEach(fav => {
+                    const favoriteItem = document.createElement('div');
+                    favoriteItem.className = 'favorite-item';
+                    
+                    // Create favorite item content
+                    favoriteItem.innerHTML = `
+                        <div class="favorite-thumbnail" style="
+                            background-image: url('${fav.thumbnail}');
+                            background-size: cover;
+                            background-position: center;
+                            width: 100%;
+                            height: 100px;
+                            border-radius: 6px;
+                            margin-bottom: 8px;
+                            position: relative;
+                        ">
+                            ${fav.mediaType === 'video' ? 
+                                '<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 1.5rem;"><i class="fas fa-play"></i></div>' : 
+                                ''}
+                        </div>
+                        <h4>${fav.title}</h4>
+                        <p>${new Date(fav.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                    `;
+                    
+                    favoriteItem.addEventListener('click', () => {
+                        dateInput.value = fav.date;
+                        fetchAPOD(fav.date);
+                        
+                        // Scroll to top
+                        window.scrollTo({
+                            top: 0,
+                            behavior: 'smooth'
+                        });
+                        
+                        // Show loading animation on the clicked item
+                        favoriteItem.style.opacity = '0.7';
+                        setTimeout(() => {
+                            favoriteItem.style.opacity = '1';
+                        }, 1000);
+                    });
+                    
+                    favoritesList.appendChild(favoriteItem);
+                });
+            }
+            
+            function shareAPOD() {
+                if (!currentAPODData) return;
+                
+                const title = currentAPODData.title;
+                const text = `Check out NASA's Astronomy Picture of the Day: ${title}`;
+                const url = currentAPODData.url;
+                
+                if (navigator.share) {
+                    navigator.share({
+                        title: title,
+                        text: text,
+                        url: url
+                    }).catch(err => {
+                        console.error('Error sharing:', err);
+                        fallbackShare(title, url);
+                    });
+                } else {
+                    fallbackShare(title, url);
+                }
+            }
+            
+            function fallbackShare(title, url) {
+                const shareText = `${title} - ${url}`;
+                
+                // Copy to clipboard
+                navigator.clipboard.writeText(shareText).then(() => {
+                    showToast('Link copied to clipboard!', 'info');
+                }).catch(err => {
+                    console.error('Could not copy text: ', err);
+                    // Fallback to window prompt
+                    window.prompt('Copy this link:', url);
+                });
+            }
+            
+            function openFullscreen() {
+                if (!currentAPODData) return;
+                
+                fullscreenOverlay.classList.remove('hidden');
+                setTimeout(() => {
+                    fullscreenOverlay.classList.add('active');
+                }, 10);
+                
+                // Prevent scrolling when fullscreen is open
+                document.body.style.overflow = 'hidden';
+            }
+            
+            function closeFullscreenHandler() {
+                fullscreenOverlay.classList.remove('active');
+                setTimeout(() => {
+                    fullscreenOverlay.classList.add('hidden');
+                }, 400);
+                
+                // Restore scrolling
+                document.body.style.overflow = '';
+            }
+            
+            function showToast(message, type) {
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+                
+                // Add animation
+                setTimeout(() => {
+                    toast.style.opacity = '1';
+                    toast.style.transform = 'translateY(0)';
+                }, 10);
+                
+                // Remove after delay
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        document.body.removeChild(toast);
+                    }, 300);
+                }, 3000);
+            }
+            
+            // Add toast styles dynamically
+            const toastStyles = document.createElement('style');
+            toastStyles.textContent = `
+                .toast {
+                    position: fixed;
+                    bottom: 30px;
+                    left: 50%;
+                    transform: translateX(-50%) translateY(20px);
+                    padding: 12px 24px;
+                    border-radius: 8px;
+                    color: white;
+                    font-weight: 500;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                    z-index: 1100;
+                    opacity: 0;
+                    transition: all 0.3s ease;
+                    max-width: 90%;
+                    text-align: center;
+                }
+                .toast-success {
+                    background-color: var(--success);
+                }
+                .toast-warning {
+                    background-color: var(--warning);
+                    color: var(--dark);
+                }
+                .toast-info {
+                    background-color: var(--primary);
+                }
+                .toast-error {
+                    background-color: var(--danger);
+                }
+            `;
+            document.head.appendChild(toastStyles);
+        });
+    </script>
+</body>
+</html>
